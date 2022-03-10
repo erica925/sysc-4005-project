@@ -1,5 +1,19 @@
 import random
 import numpy as np
+import math
+
+class LinearCongruentialGenerator():
+    def __init__(self, a, c, m, x0):
+        self.a = a
+        self.c = c
+        self.m = m
+        self.x = x0
+    def getRandomNumber(self):
+        self.x = (self.a * self.x + self.c) % self.m
+        return self.x / self.m
+    
+def getExponential(lam, r):
+    return -1 / lam * math.log(r)
 
 #defines an inspector entity
 class Inspector():
