@@ -14,9 +14,12 @@ W1_times = np.loadtxt(DATA_FOLDER + 'ws1.dat', unpack = True)
 W2_times = np.loadtxt(DATA_FOLDER + 'ws2.dat', unpack = True)
 W3_times = np.loadtxt(DATA_FOLDER + 'ws3.dat', unpack = True)
 
+def lam_estimator(data):
+    return len(data) / sum(data)
+
 def build_qq_plot(title, data, test_dist):
     stats.probplot(data, dist = test_dist, plot = plt)
-    plt.title(title + test_dist)
+    plt.title(title + " - " + test_dist)
     plt.show()
 
 def build_histogram(title, xlabel, ylabel, data):
@@ -31,13 +34,13 @@ def build_histogram(title, xlabel, ylabel, data):
             break
         plt.cla()
         bins-=1
-    chi_square_test(arr, len(data)/sum(data))
     for i in range(bins):
         plt.text(int(arr[1][i]),int(arr[0][i]),str(int(arr[0][i])))
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.show()
+    return (arr, lam_estimator(data))
     
 def do_qq_plots(test_dist):
     build_qq_plot("Inspector 1 Inspection Times (Component 1)", I1C1_times, test_dist)
@@ -48,13 +51,19 @@ def do_qq_plots(test_dist):
     build_qq_plot("Workstation 3 Assembly Times (Product 3)", W3_times, test_dist)
     
 def do_histograms():
-    build_histogram("Inspector 1 Inspection Times (Component 1)", "Minutes", "Frequency", I1C1_times)
-    build_histogram("Inspector 2 Inspection Times (Component 2)", "Minutes", "Frequency", I2C2_times)
-    build_histogram("Inspector 2 Inspection Times (Component 3)", "Minutes", "Frequency", I2C3_times)
-    build_histogram("Workstation 1 Assembly Times (Product 1)", "Minutes", "Frequency", W1_times)
-    build_histogram("Workstation 2 Assembly Times (Product 2)", "Minutes", "Frequency", W2_times)
-    build_histogram("Workstation 3 Assembly Times (Product 3)", "Minutes", "Frequency", W3_times)
-
+    (hist, lam_estimator) = build_histogram("Inspector 1 Inspection Times (Component 1)", "Minutes", "Frequency", I1C1_times)
+    chi_square_test(hist, lam_estimator)
+    (hist, lam_estimator) = build_histogram("Inspector 2 Inspection Times (Component 2)", "Minutes", "Frequency", I2C2_times)
+    chi_square_test(hist, lam_estimator)
+    (hist, lam_estimator) = build_histogram("Inspector 2 Inspection Times (Component 3)", "Minutes", "Frequency", I2C3_times)
+    chi_square_test(hist, lam_estimator)
+    (hist, lam_estimator) = build_histogram("Workstation 1 Assembly Times (Product 1)", "Minutes", "Frequency", W1_times)
+    chi_square_test(hist, lam_estimator)
+    (hist, lam_estimator) = build_histogram("Workstation 2 Assembly Times (Product 2)", "Minutes", "Frequency", W2_times)
+    chi_square_test(hist, lam_estimator)
+    (hist, lam_estimator) = build_histogram("Workstation 3 Assembly Times (Product 3)", "Minutes", "Frequency", W3_times)
+    chi_square_test(hist, lam_estimator)
+    
 def chi_square_test(hist, lam):
     bin_counts = hist[0]
     bin_bottoms = hist[1]
@@ -73,8 +82,10 @@ def chi_square_test(hist, lam):
             exp_freqs.append(n*(cum_probs_of_exp_dist[i] - cum_probs_of_exp_dist[i - 1]))
         i += 1
     
+    bottoms = []
     ei = []
     oi = []
+    sums = []
     running_exp_prob = 0
     running_obs_prob = 0
     for i in range(len(exp_freqs)):
@@ -97,9 +108,8 @@ def chi_square_test(hist, lam):
     
     chi_square_sum = 0
     for i in range(len(oi)):
+        sums.append((oi[i] - ei[i]) ** 2 / ei[i])
         chi_square_sum += (oi[i] - ei[i]) ** 2 / ei[i]
-        
-    print(chi_square_sum)
     
 do_qq_plots("norm")
 do_qq_plots("expon")
