@@ -114,9 +114,3 @@ def chi_square_test(hist, lam):
 do_qq_plots("norm")
 do_qq_plots("expon")
 do_histograms()
-    
-    
-
-
-    
-
