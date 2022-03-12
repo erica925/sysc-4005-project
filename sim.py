@@ -2,18 +2,26 @@ import random
 import numpy as np
 import math
 
+#creates a linear congruential generator to generate numbers between 0 and 1
 class LinearCongruentialGenerator():
     def __init__(self, a, c, m, x0):
         self.a = a
         self.c = c
         self.m = m
         self.x = x0
+    #returns a random number between 0 and 1
     def getRandomNumber(self):
         self.x = (self.a * self.x + self.c) % self.m
         return self.x / self.m
     
+#returns a random value from the exponential distribution defined by the given lambda parameter
+#uses a randomly generated number from 0 to 1 and the inverse transform technique
 def getExponential(lam, r):
     return -1 / lam * math.log(r)
+
+#calculates the MLE estimator for the lambda parameter of an exponential distribution based on the given dataset
+def lam_estimator(data):
+    return len(data) / sum(data)
 
 #defines an inspector entity
 class Inspector():
@@ -69,20 +77,6 @@ class Workstation():
             if b.workstation == self:
                 list.append(b)
         return list
-    
-#defines a table of random numbers to be retrieved sequentially
-class RandomNumberTable():
-    #creates the random number table
-    def __init__(self, nums):
-        self.nums = nums
-        self.index = 0
-    #retreives the next number in the table, going back to the beginning if the end is reached
-    def getRandomNumber(self):
-        randomNumber = self.nums[self.index]
-        self.index += 1
-        if self.index >= len(self.nums):
-            self.index = 0
-        return randomNumber
 
 #defines an event type for when an inspector puts a component in a buffer
 class BufferFillEvent():
@@ -213,20 +207,20 @@ def getC2orC3():
 #retreives random inspection times sequentially from the correct file
 def getInspectionTime(inspector, component):
     if inspector.id == 1:
-        return I1C1_times.getRandomNumber()
+        return getExponential(I1C1_lambda, lin_con_gen.getRandomNumber())
     elif component == COMPONENTS[1]:
-        return I2C2_times.getRandomNumber()
+        return getExponential(I2C2_lambda, lin_con_gen.getRandomNumber())
     else:
-        return I2C3_times.getRandomNumber()
+        return getExponential(I2C3_lambda, lin_con_gen.getRandomNumber())
             
 #retreives random assembly times sequentially from the correct file
 def getAssemblyTime(workstation):
     if workstation.id == 1:
-        return W1_times.getRandomNumber()
+        return getExponential(W1_lambda, lin_con_gen.getRandomNumber())
     elif workstation.id == 2:
-        return W2_times.getRandomNumber()
+        return getExponential(W2_lambda, lin_con_gen.getRandomNumber())
     else:
-        return W3_times.getRandomNumber()
+        return getExponential(W3_lambda, lin_con_gen.getRandomNumber())
         
 #create the FEL
 FEL = []
@@ -245,12 +239,21 @@ BUFFERS = [Buffer(WORKSTATIONS[0],INSPECTORS[0],COMPONENTS[0]),
 DATA_FOLDER = "data/"
 
 #load the inspection and assembly times from the files in the DATA_FOLDER
-I1C1_times = RandomNumberTable(np.loadtxt(DATA_FOLDER + 'servinsp1.dat', unpack = True))
-I2C2_times = RandomNumberTable(np.loadtxt(DATA_FOLDER + 'servinsp22.dat', unpack = True))
-I2C3_times = RandomNumberTable(np.loadtxt(DATA_FOLDER + 'servinsp23.dat', unpack = True))
-W1_times = RandomNumberTable(np.loadtxt(DATA_FOLDER + 'ws1.dat', unpack = True))
-W2_times = RandomNumberTable(np.loadtxt(DATA_FOLDER + 'ws2.dat', unpack = True))
-W3_times = RandomNumberTable(np.loadtxt(DATA_FOLDER + 'ws3.dat', unpack = True))
+I1C1_times = np.loadtxt(DATA_FOLDER + 'servinsp1.dat', unpack = True)
+I2C2_times = np.loadtxt(DATA_FOLDER + 'servinsp22.dat', unpack = True)
+I2C3_times = np.loadtxt(DATA_FOLDER + 'servinsp23.dat', unpack = True)
+W1_times = np.loadtxt(DATA_FOLDER + 'ws1.dat', unpack = True)
+W2_times = np.loadtxt(DATA_FOLDER + 'ws2.dat', unpack = True)
+W3_times = np.loadtxt(DATA_FOLDER + 'ws3.dat', unpack = True)
+I1C1_lambda = lam_estimator(I1C1_times)
+I2C2_lambda = lam_estimator(I2C2_times)
+I2C3_lambda = lam_estimator(I2C3_times)
+W1_lambda = lam_estimator(W1_times)
+W2_lambda = lam_estimator(W2_times)
+W3_lambda = lam_estimator(W3_times)
+
+#initialize the linear congruential generator
+lin_con_gen = LinearCongruentialGenerator(289, 321, 65536, 0)
 
 #get the user to enter a number of minutes that the simulation will run for
 STOP_TIME = int(input("Enter the number of minutes to run the simulation: "))
