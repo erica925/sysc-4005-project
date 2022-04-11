@@ -110,6 +110,9 @@ class BeginInspectionEvent():
         inspection_time = getInspectionTime(self.inspector, self.component)
         addToFEL(FinishInspectionEvent(self.time + inspection_time, self.inspector, self.component))
         
+#loop through which workstation gets C1
+next_workstation_C1 = 1
+
 #defines an event type for when an inspector finishes inspecting a component
 class FinishInspectionEvent():
     #creates the event
@@ -127,9 +130,22 @@ class FinishInspectionEvent():
         #if there is space, make the inspector put the component in one of the available buffers
         if len(freeBuffers) > 0:
             chosenBuffer = None
-            for b in freeBuffers:
-                if chosenBuffer == None or chosenBuffer.capacity > b.capacity:
-                    chosenBuffer = b
+
+            if self.inspector.id == 2:
+                for b in freeBuffers:
+                    if chosenBuffer == None or chosenBuffer.capacity > b.capacity:
+                        chosenBuffer = b
+
+            #alternate which workstation gets C1 instead of using priorities
+            global next_workstation_C1
+            if self.inspector.id == 1:
+                while chosenBuffer == None:
+                    for b in freeBuffers:
+                        if b.workstation.id == next_workstation_C1:
+                            if chosenBuffer == None or chosenBuffer.capacity > b.capacity:
+                                chosenBuffer = b
+                    if next_workstation_C1 == 3: next_workstation_C1 = 1
+                    else: next_workstation_C1 += 1                
             addToFEL(BufferFillEvent(self.time, chosenBuffer))
         #if there is no space, block the inspector
         else:
